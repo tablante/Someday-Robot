@@ -16,7 +16,7 @@ public:
 		int cards_left();
 
 /*
-	Low Two bits will be suits
+	Low Two bits will be suits. is this still true?
 		then 4 bits to determine size
 		0-3 are 2s. Spades Clubs Diamonds Hearts
 		4-7 are 3s
