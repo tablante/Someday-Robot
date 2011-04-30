@@ -20,7 +20,10 @@ public:
 		int* whos_got();  //returns chip stacks.  these are net of pot, someone all in has 0
 		int* cards();  //returns community cards
 		int* what_pot();  //returns a number for each player
+		int raise_level(int round);  //returns what number raise you're on
 		string whos_sitting(int seat);
+		
+		//THIS NEEDS TO BE FIXED:
 		int getActions(int player, int round, int step); //return the whole array. -2 tells not reached
 		void print_chart(int playernum, int card1, int card2, bool show_all = false, int* all_cards=0);		//print a graph of the entire hand
 

@@ -239,3 +239,6 @@ Felt::Felt(){
 	int* Felt::whos_got(){
 		return chip_counts;
 	}
+	int Felt::raise_level(int round){
+		return action_depth[round];	
+	}  //returns what number raise you're on

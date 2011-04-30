@@ -21,12 +21,14 @@ const int START_OUTPUT = 2; //basically, 4 spaces in output the number, then spa
 const int MAX_RAISES = 3; //max number of raises for limit poker
 const int TH_ROUNDS =  4; //pre-flop ----- flop ------ turn -------- river
 
-const int DEF_BIG_BLIND = 2;
+const int DEF_BIG_BLIND = 2;  //in fixed limit, raise is twice this
 const int DEF_SML_BLIND = 1;
 const int DEF_ANTE = 0;
 
 const bool USE_BLINDS = true; //if false, using antes.
 const bool FIXED_LIMIT = true; //implemented on player side
+
+const bool HELP_PLAYER = false;
 
 int length(int n);
 void output_card(int c);

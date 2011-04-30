@@ -3,6 +3,7 @@
 #include "Table.h"
 #include <iostream>
 #include <string>
+#include <math.h>
 #include "Felt.h"
 #include "Evaluators.h"
 
@@ -33,7 +34,7 @@ protected:
 	bool automated;
 	int strategy;
 	string name;
-	int type;  //1 is active, uses I/O. 0 always calls
+	int type;  //1 is active, uses I/O. 0 always calls. >1 does diff stuff. handled by action()
 	int other_probs[1326]; //to get a,b. a<b. index: 52*a - (a^2+3a+2)/2 +b
 	//these are for evaluatin' hands
 	int myGHs[10];
@@ -41,7 +42,7 @@ protected:
 	double probs_tie_win[10];
 	double probs_lose[10];
 
-	int act_call(int location, Felt f);  //called by player type 0
+
 
 	/* compiles results */
 	void eval_th_o(int* my_cards, int numCards, double* probs_tie_win, double* probs_higher);
@@ -54,11 +55,29 @@ protected:
 
 	void initialize_probs(int style=0);
 
+
+
+	
+	
+
+/**** ACTION HELPERS    *****/
+
+	
+	double prob_win(); //based on myProbs, probs_tie_win, and probs_lose, calc prob of winning 1v1
+	int act_call(int location, Felt f);  //called by player type 0. determines amt to raise
+	int human_action(int s, Felt f); //called if it's a human. does all human interaction
+
+	//one version AI. the random adds randomness if the player requests it
+	int comp_action1(int seat, Felt f, bool prand=false);
+	/* spontaneity: some measure of how chancy your hand is.  
+	given the same prob_win,
+	a hand with high spontaneity is good for calling, lower for raising 
+	this needs a lot of work, needs to reflect my spontaneity vs table
+	*/
+	double spontaneity();
+
 	//sets those to 0
 	void update_probs(int card);
-
-	//based on myProbs, probs_tie_win, and probs_lose, calculate the prob of winning 1v1
-	double prob_win();
 
 };
 

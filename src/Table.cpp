@@ -314,37 +314,40 @@ void Table::play_round_th(){
 	t_felt->add_community(cards[2]);
 
 	//3: elicit a POOOOOOOOOOOOOOOOOOOOOST FLOOOOOOOOOOOP ACTION
-	if(currSmlBlind !=-1){//this is first seat?? TOCHECK
-	t_felt->set_first_bet_seat(1,currSmlBlind);
-	}else {t_felt->set_first_bet_seat(1,currBigBlind);}
-	
-	//old: t_felt->set_first_bet_seat(1,(dealer+1)%MAX_SEATS); //this sets first actor (round, seat)
-	if(currSmlBlind!=-1){getBids(currSmlBlind,1);}
-	else{getBids(currBigBlind,1);}
+	if(still_in()>1){
+		if(currSmlBlind !=-1){//this is first seat?? TOCHECK
+			t_felt->set_first_bet_seat(1,currSmlBlind);
+		}else {t_felt->set_first_bet_seat(1,currBigBlind);}
+		if(currSmlBlind!=-1){getBids(currSmlBlind,1);}
+		else{getBids(currBigBlind,1);}
+	}
 
 	// THE TURN
 	cards[3] = t_deck->draw_card(0);
 	t_felt->add_community(cards[3]);
-	//old: t_felt->set_first_bet_seat(2,(dealer+1)%MAX_SEATS); //this sets first actor (round, seat)
-	if(currSmlBlind !=-1){//this is first seat?? TOCHECK
-		t_felt->set_first_bet_seat(2,currSmlBlind);
-	}else {t_felt->set_first_bet_seat(2,currBigBlind);}
-	
-	if(currSmlBlind!=-1){getBids(currSmlBlind,2);}
-	else{getBids(currBigBlind,2);}
+
+	if(still_in()>1){
+		if(currSmlBlind !=-1){//this is first seat?? TOCHECK
+			t_felt->set_first_bet_seat(2,currSmlBlind);
+		}else {t_felt->set_first_bet_seat(2,currBigBlind);}
+		if(currSmlBlind!=-1){getBids(currSmlBlind,2);}
+		else{getBids(currBigBlind,2);}
+	}
+
+
 	//4: elicit a post-turn action
 
 
 	cards[4] = t_deck->draw_card(0);
 	t_felt->add_community(cards[4]);
-	//old: t_felt->set_first_bet_seat(3,(dealer+1)%MAX_SEATS); //this sets first actor (round, seat)
-	if(currSmlBlind !=-1){//this is first seat?? TOCHECK
-		t_felt->set_first_bet_seat(3,currSmlBlind);
-	}else {t_felt->set_first_bet_seat(3,currBigBlind);}
-	if(currSmlBlind!=-1){getBids(currSmlBlind,3);}
-	else{getBids(currBigBlind,3);}
-	//5: elicit a post-river action
 
+	if(still_in()>1){
+		if(currSmlBlind !=-1){//this is first seat?? TOCHECK
+			t_felt->set_first_bet_seat(3,currSmlBlind);
+		}else {t_felt->set_first_bet_seat(3,currBigBlind);}
+		if(currSmlBlind!=-1){getBids(currSmlBlind,3);}
+		else{getBids(currBigBlind,3);}
+	}
 
 
 
@@ -438,6 +441,14 @@ void Table::play_round_th(){
 	//iterate dealer. don't skip small blind or big blind.
 
 } //end TH_ROUND
+
+int Table::still_in(){
+	int i,j;
+	for(i=j=0;i<MAX_SEATS;i++){
+		if(!folded[i])j++;
+	}
+	return j;
+}
 
 
 /* identify first move 

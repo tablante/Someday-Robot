@@ -63,6 +63,8 @@ char option = 'y';
 
 // SECTION 1: STANDARD PLAYING
 playas[0].setType(1); //1 sets Alice is controlled
+playas[1].setType(2); //set to ai
+playas[2].setType(2);
 t.setAllActive();
 t.setDealer(2);//needs to be after all active
 while (option != 'n' && option != 'N' && option != '0'){

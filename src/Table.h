@@ -37,6 +37,7 @@ public:
 		void start_collecting(); //turn on data collection
 		void record_stats(); //finish data collection
 		
+		int still_in(); //return # players havent folded
 
 /*
 	Cards range from 0-51
@@ -49,9 +50,6 @@ private:
 	
 	int stats[52][52][2];
 	bool stats_on;
-	
-
-
 
 //TABLE INFORMATION- MID GAME
 

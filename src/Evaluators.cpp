@@ -610,7 +610,7 @@ void eval_th_m(int* zcards, int numCards, double* myProbs, int* myGHs){
 		x=(myGHs[4]%100)/100;//this is number of trips
 		for(i=0;i<13;i++){
 			if(nums[i]>=2 && i!=x){
-				myGHs[4]=x*100+i;
+				myGHs[7]=x*100+i;
 			}
 		}
 	}

@@ -58,7 +58,7 @@ void Player::update_probs(int card){
 
 //initialized to 2 cards
 void Player::initialize_probs(int style){
-	int i,j,z;
+	int i,j;
 	int w; //level to initialize
 	if(style==0){  //flat probabilities
 		w = 1;
@@ -143,61 +143,14 @@ void Player::eval_th_o(int* my_cards, int numCards, double* probs_tie_win, doubl
 //action should return a number that is how much they're putting in.  0 is check/fold, -1 is fold?
 int Player::action(int seat, Felt f){
 	/* debugging:*/
-	int act, i,r;
-	char char_act;
+	int act;
 		//need to decide:
 	if(type==0){  //this type acts automatically
 		act = act_call(seat, f);
-	}else { //type = 1, uses io
-		f.print_chart(seat, cards[0], cards[1]);
-		int* tablecards = f.cards();
-		for(i=0; i!= 5 && tablecards[i] != -1; i++){
-			cards[2+i] = tablecards[i];
-		} //i would be 0-preflop, 3-postflop, 4-postturn, 5-postriver
-		if(i==3){
-		update_probs(tablecards[0]);
-		update_probs(tablecards[1]);
-		update_probs(tablecards[2]);
-		}else if(i==4){update_probs(tablecards[3]);}
-		else if(i==5){update_probs(tablecards[4]);}
-		if(FIXED_LIMIT){
-			if(i<=3){
-				r=DEF_BIG_BLIND;
-			}else{r=DEF_BIG_BLIND*2;}
-		}
-		if(i>0){  //DISPLAY INFORMATION
-			eval_th_o(cards, i+2, probs_tie_win, probs_lose);
-			eval_th_m(cards, i+2, myProbs, myGHs);
-			//output_my_future(myProbs, myGHs);
-			output_my_future2(myProbs, myGHs, probs_tie_win, probs_lose);
-		}
-		if(FIXED_LIMIT){
-			i=act_call(seat,f);
-			char_act ='z';
-			while(char_act!='c' && char_act!='C' && char_act!='r' && char_act!='R' 
-				&& char_act!='f' && char_act!='F' && char_act!='0' && char_act!='1'
-				&& char_act!='2'){
-					if(i>0){ //need to call
-						cout<<endl<<name<<": fold [f/F/0], call "<<i<<" [c/C/1] or raise "<<
-							r<<"[r/R/2]: ";
-					}else{
-						cout<<endl<<name<<": fold [f/F/0], check "<<" [c/C/1] or raise "<<
-							r<<" [r/R/2]: ";
-					}
-				cin>>char_act;
-			}
-			if(char_act == 'c' || char_act == 'C' || char_act == '1'){
-				act = i;
-			}else if(char_act == 'r' || char_act == 'R' || char_act == '2'){
-				act = i+r;
-			}else if(char_act == 'f' || char_act == 'F' || char_act == '0'){
-				act=-1;
-			}else{cout<<"ERROR, invalid entry somehow";}
-		}else{
-
-			cout<<endl<<"Enter "<<name<<"'s move: ";
-			cin>>act;
-		}
+	}else if(type==1){ //type = 1, uses io
+		act = human_action(seat, f);
+	}else if(type==2){
+		act = comp_action1(seat, f,true);
 	}
 
 	/* let's just pick up how much we need to raise */
@@ -232,7 +185,7 @@ double Player::prob_win(){
 		}
 	}
 	prob_win=prob_lose=0;
-	for(i=0;i<10;i++){
+/*	for(i=0;i<10;i++){
 		if(i<high_achieve){ //have this beat
 			prob_win += probs_tie_win[i] + probs_lose[i];
 		}else if(i==high_achieve){
@@ -240,6 +193,210 @@ double Player::prob_win(){
 			prob_lose += probs_lose[i];
 		}
 	}
-
+*/
+	for (i=9;i>=0 && (i==9 || myProbs[i+1]!=1); i--){ //iterate over myprobs
+		for(j=0;j<10;j++){//iterate over opponent probs
+			if(j<i){//i'd win
+				prob_win += myProbs[i]*(probs_tie_win[j]+probs_lose[j]);
+			}else if(j==i){//depends on type
+				prob_win += myProbs[i]*(probs_tie_win[j]);
+				prob_lose += myProbs[i]*probs_lose[j];
+			}else{  //j>i, they'd win
+				prob_lose += myProbs[i]*(probs_tie_win[j]+probs_lose[j]);
+			}
+		}
+	}
+	
 	return prob_win/(prob_win+prob_lose);
+}
+
+double Player::spontaneity(){
+	int high_achieve = 0; //start with high_Card
+	int i;
+	double spont = 0;
+	for(i=0;i<10;i++){
+		if(myProbs[i]==1){
+			high_achieve=i;
+		}
+	}
+
+	for(i=high_achieve+1;i<10;i++){
+		spont +=  myProbs[i];
+	}
+	return spont;
+}
+
+int Player::human_action(int seat, Felt f){
+	int act, i,r;
+	char char_act;
+	f.print_chart(seat, cards[0], cards[1]);
+	int* tablecards = f.cards();
+	for(i=0; i!= 5 && tablecards[i] != -1; i++){
+		cards[2+i] = tablecards[i];
+	} //i would be 0-preflop, 3-postflop, 4-postturn, 5-postriver
+	if(i==3){
+		update_probs(tablecards[0]);
+		update_probs(tablecards[1]);
+		update_probs(tablecards[2]);
+	}else if(i==4){update_probs(tablecards[3]);}
+	else if(i==5){update_probs(tablecards[4]);}
+	if(FIXED_LIMIT){
+		if(i<=3){
+			r=DEF_BIG_BLIND;
+		}else{r=DEF_BIG_BLIND*2;}
+	}
+	if(i>0){  //DISPLAY INFORMATION
+		eval_th_o(cards, i+2, probs_tie_win, probs_lose);
+		eval_th_m(cards, i+2, myProbs, myGHs);
+		//output_my_future(myProbs, myGHs);
+		if(HELP_PLAYER){
+			output_my_future2(myProbs, myGHs, probs_tie_win, probs_lose);
+			cout<<endl<<"Probability of winning is: "<<prob_win()<<"  Spontaneity is:"<<spontaneity()<<endl;
+			cout<<"A robot would do: "<< comp_action1(seat,f)<<endl;
+		}
+	}
+	if(FIXED_LIMIT){
+		i=act_call(seat,f);
+		char_act ='z';
+		while(char_act!='c' && char_act!='C' && char_act!='r' && char_act!='R' 
+			&& char_act!='f' && char_act!='F' && char_act!='0' && char_act!='1'
+			&& char_act!='2'){
+				if(i>0){ //need to call
+					cout<<endl<<name<<": fold [f/F/0], call "<<i<<" [c/C/1] or raise "<<
+						i+r<<"[r/R/2]: ";
+				}else{
+					cout<<endl<<name<<": fold [f/F/0], check "<<" [c/C/1] or raise "<<
+						i+r<<" [r/R/2]: ";
+				}
+				cin>>char_act;
+		}
+		if(char_act == 'c' || char_act == 'C' || char_act == '1'){
+			act = i;
+		}else if(char_act == 'r' || char_act == 'R' || char_act == '2'){
+			act = i+r;
+		}else if(char_act == 'f' || char_act == 'F' || char_act == '0'){
+				act=-1;
+			}else{cout<<"ERROR, invalid entry somehow";}
+		}else{
+
+			cout<<endl<<"Enter "<<name<<"'s move: ";
+			cin>>act;
+		}
+		return act;
+}
+
+
+int Player::comp_action1(int seat, Felt f, bool prand){
+	int act, i,r,phase;
+	int num_opponents_orig;
+	int num_opponents_curr;
+	char char_act;
+	int* tablecards = f.cards();
+	double spont, prob, advant;
+	int* fplayers;
+	fplayers = f.whos_in();
+	num_opponents_orig = num_opponents_curr = 0;
+	for(i=0; i<MAX_SEATS;i++){
+		if(fplayers[i] == 0){ //0 is folded
+			num_opponents_orig++;
+		}else if(fplayers[i]==1){ //1 has cards
+			num_opponents_orig++;
+			num_opponents_curr++;
+		}
+	}
+	num_opponents_orig--;  //  don't count yourself as an opponent
+	num_opponents_curr--;  // "    "
+
+	for(phase=0; phase!= 5 && tablecards[phase] != -1; phase++){
+		cards[2+phase] = tablecards[phase];
+	} //i would be 0-preflop, 3-postflop, 4-postturn, 5-postriver
+	if(phase==3){
+		update_probs(tablecards[0]);
+		update_probs(tablecards[1]);
+		update_probs(tablecards[2]);
+	}else if(phase==4){update_probs(tablecards[3]);}
+	else if(phase==5){update_probs(tablecards[4]);}
+	if(FIXED_LIMIT){
+		if(phase<=3){
+			r=DEF_BIG_BLIND;
+		}else{r=DEF_BIG_BLIND*2;}
+	}
+	if(phase>0){  //post flop
+		eval_th_o(cards, phase+2, probs_tie_win, probs_lose);
+		eval_th_m(cards, phase+2, myProbs, myGHs);
+		prob=prob_win();
+		spont=spontaneity();
+		advant = pow(prob, num_opponents_orig);
+		if(prand){
+			spont+= double(rand()%100)/double(300);
+			prob+= double(rand()%100)/double(150);
+		}
+	}
+	if(FIXED_LIMIT){
+		i=act_call(seat,f);
+
+		if(phase==0){ //
+			act=act_call(seat, f);
+		}else if(phase==3){
+			if(advant>0.6){ //want to raise regardless
+				if(f.raise_level(1)<3){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.5){//want to do initial raise
+				if(f.raise_level(1)<2){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.3 && spont > 0.3){ //willing to call
+				act=i;
+			}else{
+				act=0;    //check fold
+			}
+		}else if(phase==4){
+			if(advant>0.6){ //want to raise regardless
+				if(f.raise_level(2)<3){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.5){//want to do initial raise
+				if(f.raise_level(2)<2){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.25 && spont > 0.2){ //willing to call
+				act=i;
+			}else{
+				act=0;  //check fold
+			}
+
+		}else if(phase==5){
+			if(advant>0.7){ //want to raise regardless
+				if(f.raise_level(3)<3){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.5){//want to do initial raise
+				if(f.raise_level(3)<2){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.3){ //willing to call
+				act=i;
+			}else{ //check fold
+				act=0;
+			}
+		}else{
+			cout<<"error, wrongphase123";
+		}
+	}else{ //done with limit, unknown how to deal with NL
+		act=act_call(seat,f);
+	}
+	return act;
 }
