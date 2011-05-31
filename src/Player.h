@@ -29,20 +29,31 @@ public:
 	39-51 Hearts
 */
 protected:
-	int cards[7];  //0 and 1 are mine.
+	
 	int money;
 	bool automated;
 	int strategy;
 	string name;
 	int type;  //1 is active, uses I/O. 0 always calls. >1 does diff stuff. handled by action()
-	int other_probs[1326]; //to get a,b. a<b. index: 52*a - (a^2+3a+2)/2 +b
+	bool initialized;  //strategy dependent
+
+	/* Data structures that will help to process one deal/round */
+	int cards[7];  //0 and 1 are mine.
+	int other_probs[1326]; //to get a,b. a<b. others_index: 52*a - (a^2+3a+2)/2 +b
 	//these are for evaluatin' hands
 	int myGHs[10];
 	double myProbs[10];
 	double probs_tie_win[10];
 	double probs_lose[10];
 
-
+	float pocket_vals[169][MAX_SEATS-1][2]; 
+	/*how to read pocket_vals:
+		1: cards = 325 = 13 (lower)*13*unstd + 13*12 suited
+			unsuited: 13*lower-(lower^2+lower)/2+higher
+			suited: 90+13*lower-(lower^2+3*lower)/2+higher
+		2: #other players - 1, 0->2 heads up, 7->9 players
+		3: # order. 0 is roll-out value, 1 is dynamicity.
+	*/
 
 	/* compiles results */
 	void eval_th_o(int* my_cards, int numCards, double* probs_tie_win, double* probs_higher);
@@ -55,6 +66,7 @@ protected:
 
 	void initialize_probs(int style=0);
 
+	void get_external_data();
 
 
 	

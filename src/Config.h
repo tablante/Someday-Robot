@@ -10,7 +10,10 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+//#include <sstream>
 using namespace std;
+
+const int MACHINE = 2; //2 is bartley's home computer
 
 const int MAX_COMMUNITY_CARDS = 5;
 const int MAX_SEATS = 9;

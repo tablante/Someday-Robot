@@ -44,16 +44,24 @@ void Table::start_collecting(){
 }
 
 void Table::record_stats(){
-
-	ofstream test("C:/Users/Bartley/Desktop/Research/poker_data/test.txt", ios::out);
 	int i,j;
-	for(i=0;i<52;i++){
-		for(j=0;j<52;j++){
-			if(stats[i][j][0]>0)test<<i<<", "<<j<<", "<<stats[i][j][0]<<", "<<stats[i][j][1]<<endl;
+
+	if(MACHINE==2){
+		ofstream test("C:/Users/Bartley/Desktop/Research/poker_data/test.txt", ios::out);
+		for(i=0;i<52;i++){
+			for(j=0;j<52;j++){
+				if(stats[i][j][0]>0)test<<i<<", "<<j<<", "<<stats[i][j][0]<<", "<<stats[i][j][1]<<endl;
+			}
 		}
+
+		test.close();
+
+	}else{
+
+		cout<<" ERRORORROROR, undefined machine for file i/o";
 	}
 
-	test.close();
+
 }
 
 void Table::print_center(){
@@ -79,7 +87,7 @@ void Table::seat_player(Player* p, int money){
 	int i;
 	bool seated=false;
 	for(i=0;i<MAX_SEATS;i++){
-		if(seats[i] == 0){
+		if(seats[i] == 0){  //first open seat
 			t_felt->add_player(i, p->getName(), money);
 			seats[i] = 1;  //occupied
 			the_players[i] = p;
@@ -88,6 +96,10 @@ void Table::seat_player(Player* p, int money){
 		}
 	}
 	if(seated==false) {cout<<"no seat";	}
+}
+
+void Table::remove_player(int place){  //TO IMPLEMENT
+
 }
 
 
@@ -366,7 +378,7 @@ void Table::play_round_th(){
 		if(folded[i]==false){
 			cards[5]= player_cards[2*i];
 			cards[6]= player_cards[2*i+1];
-			hand_val[i] = eval_7(cards);
+			hand_val[i] = float(eval_7(cards));
 			if(hand_val[i]>win_hand){ //this line just for stats.
 				win_hand=hand_val[i];
 				winners=1;

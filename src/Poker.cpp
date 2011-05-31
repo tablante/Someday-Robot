@@ -38,9 +38,9 @@ srand( int(time(NULL)));
 //   PLAYYYING
 
 Table t= Table(&d, &f, 3, 10); //deck, players, starting amounts
-playas[1] = Player(100000,"Bob");
-playas[0] = Player(100000, "Alice");
-playas[2] = Player(100000, "Eve");
+playas[1] = Player(60,"Bob");
+playas[0] = Player(60, "Alice");
+playas[2] = Player(60, "Eve");
 playas[3] = Player(100000, "P4");
 playas[4] = Player(100000, "P5");
 playas[5] = Player(100000, "P6");
@@ -71,6 +71,10 @@ while (option != 'n' && option != 'N' && option != '0'){
 	t.play_round_th();
 	cout<<endl<<"Would you like to play again? Y/N/0: ";
 	cin>>option;
+	int i;
+	for(i=0;i<MAX_SEATS;i++){
+
+	}
 }
 
 

@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "Felt.h"
 #include <fstream>
+
 using namespace std;
 
 
@@ -27,7 +28,7 @@ public:
 		void seat_player(Player* p, int money=10);
 		
 		/* int* should be a pointer to the number of players. if 3 players [0,1,0] means show third player */
-		void ShowPlayers(int* num_players);
+		void ShowPlayers(int* num_players);  //IS THIS USED? DELETE?
 
 		/* 1 if good, 0 if not */
 		bool checkToDeal();
@@ -38,6 +39,8 @@ public:
 		void record_stats(); //finish data collection
 		
 		int still_in(); //return # players havent folded
+
+		void remove_player(int place);
 
 /*
 	Cards range from 0-51
@@ -50,6 +53,7 @@ private:
 	
 	int stats[52][52][2];
 	bool stats_on;
+	int stats_type;  //to implement later
 
 //TABLE INFORMATION- MID GAME
 

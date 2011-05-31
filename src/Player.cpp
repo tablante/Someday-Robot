@@ -5,6 +5,7 @@ Player::Player(){
 	cards[1] = -1;
 	money = 0;
 	automated = false;
+	initialized=false;
 }
 
 Player::Player(int endowment, string myname){
@@ -14,6 +15,8 @@ Player::Player(int endowment, string myname){
 	automated = false;
 	name=myname;
 	type = 0; //default type
+	get_external_data();
+	initialized=true;
 }
 
 string Player::getName(){
@@ -30,6 +33,7 @@ void Player::takeMoney(int amt){
 
 void Player::setType(int mytype){
 	type = mytype;
+	initialized=false;
 }
 
 void Player::give_cards(int card1, int card2){
@@ -73,6 +77,38 @@ void Player::initialize_probs(int style){
 		}
 	}
 }
+
+/* 
+	Right now all we get is hand prior probabilities
+*/
+void Player::get_external_data(){
+	ifstream file;
+
+	if(MACHINE==2){
+		file.open("C:/Users/Bartley/Desktop/Research/Poker/poker_data/starters.csv");
+	}
+
+	int i,j;
+	int start,end;
+	string line;
+	//istringstream line_st;
+	if(file.is_open()){
+		for(i=0;i<169;i++){ //loop over all 2card pairs
+			getline(file, line);  //get a line of data
+			start=0;
+			end = line.find(',');
+
+			for(j=0;j<MAX_SEATS-1;j++){
+				start = end+1;
+				end = line.find(',',start);
+				pocket_vals[i][j][0]= float(atof(line.substr(start,end-start).c_str()));
+			}
+		}
+
+		file.close();
+	}
+}
+
 
 /*
 this iterates through all other cards
@@ -321,6 +357,21 @@ int Player::comp_action1(int seat, Felt f, bool prand){
 			r=DEF_BIG_BLIND;
 		}else{r=DEF_BIG_BLIND*2;}
 	}
+	if(phase==0){
+		int hole_index=0;
+		if( (cards[0]&3) == (cards[1]&3) ){ //low 2 bits same means same suit
+			//13*lower-(lower^2+lower)/2+higher
+			hole_index = 90+13*int(cards[0]/13) - (int(cards[0]/13)*(int(cards[0]/13)+3))/2 + int(cards[1]/13);
+		}else{  //unsuited
+				//90+13*lower-(lower^2+3*lower)/2+higher
+			hole_index = 13*int(cards[0]/13) - (int(cards[0]/13)*(int(cards[0]/13)+1))/2 + int(cards[1]/13);
+		}
+		advant = pocket_vals[hole_index][num_opponents_orig-1][0] / double(num_opponents_orig+1.0);
+		if(prand){
+			advant+= double(rand()%50)/double(250);
+		}
+		spont=0; //TO FIX
+	}
 	if(phase>0){  //post flop
 		eval_th_o(cards, phase+2, probs_tie_win, probs_lose);
 		eval_th_m(cards, phase+2, myProbs, myGHs);
@@ -329,14 +380,30 @@ int Player::comp_action1(int seat, Felt f, bool prand){
 		advant = pow(prob, num_opponents_orig);
 		if(prand){
 			spont+= double(rand()%100)/double(300);
-			prob+= double(rand()%100)/double(150);
+			advant+= double(rand()%50)/double(250);
 		}
 	}
 	if(FIXED_LIMIT){
 		i=act_call(seat,f);
 
-		if(phase==0){ //
-			act=act_call(seat, f);
+		if(phase==0){ //PRE FLOP
+			if(advant>0.6){ //want to raise regardless
+				if(f.raise_level(1)<3){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.5){//want to do initial raise
+				if(f.raise_level(1)<2){
+					act=i+r;
+				}else{
+					act=i;
+				}
+			}else if(advant>0.3){ //willing to call
+				act=i;
+			}else{
+				act=0;    //check fold
+			}
 		}else if(phase==3){
 			if(advant>0.6){ //want to raise regardless
 				if(f.raise_level(1)<3){
