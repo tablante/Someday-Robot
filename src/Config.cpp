@@ -66,6 +66,15 @@ void output_card(int c){
 			break;}
 }
 
+float uRand(float lower, float upper){
+	int factor = 1000;
+	int modulator;
+	modulator = int(factor*(upper-lower));
+	float random = float((rand()%modulator)/float(factor));
+	return random+lower;
+
+}
+
 void output_card_small(int c){
 	int suit = c%4;
 	int number = c/4;

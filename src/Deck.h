@@ -1,10 +1,10 @@
 #ifndef DECK_H
 #define DECK_H
 
-#include <iostream>
-#include <string.h>
+//using namespace std;
+#include "Config.h"
 
-using namespace std;
+
 
 class Deck{
 public:

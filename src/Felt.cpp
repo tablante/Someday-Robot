@@ -38,7 +38,10 @@ Felt::Felt(){
 				for(k=0;k<MAX_RAISES;k++){
 					actions[i][j][k] = -2;	}}}
 		for(j=0;j<rounds;j++){action_depth[j]=0;}  //no actions to start
-		for(i=0;i<TH_ROUNDS;i++){starters[i]=-1;	}
+		for(i=0;i<TH_ROUNDS;i++){
+			starters[i]=-1;
+			num_raises[i]=0;
+		}
 	}
 
 	void Felt::setChips(int seat, int amt){
@@ -80,7 +83,7 @@ Felt::Felt(){
 	}
 
 
-	void Felt::add_action(int player_num, int round, int amount, int raise_lvl){
+	void Felt::add_action(int player_num, int round, int amount, int raise_lvl, bool count_raise){
 
 
 		//NEW METHOD
@@ -88,6 +91,13 @@ Felt::Felt(){
 		if(raise_lvl+1 > action_depth[round])action_depth[round] = raise_lvl+1;
 		//what does this do?
 
+		int i, max_in;
+		max_in = 0;
+		for(i=0;i<MAX_SEATS;i++){
+			if(pot[i]>max_in)max_in = pot[i];
+		}
+
+		if(amount+pot[player_num] > max_in && count_raise)num_raises[round]++;
 
 		if(amount>0){
 			pot[player_num]+= amount;
@@ -240,5 +250,5 @@ Felt::Felt(){
 		return chip_counts;
 	}
 	int Felt::raise_level(int round){
-		return action_depth[round];	
+		return num_raises[round];	
 	}  //returns what number raise you're on

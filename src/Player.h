@@ -1,24 +1,33 @@
 #ifndef PLAYER_H
 #define PLAYER_H
+
+
+
+#include "Config.h"
+
 #include "Table.h"
 #include <iostream>
 #include <string>
 #include <math.h>
 #include "Felt.h"
-#include "Evaluators.h"
+
 
 class Table;  //forward declaration I guess
 
-using namespace std;
+
 
 class Player{
 public:
 		Player(int money, string myname);
 		Player();
 		void give_cards(int card1, int card2);
-		int action(int location, Felt f); //return a -1 for fold, else number for bet/chk. this calls other action fxns
+		int action(int location, Felt f, bool canRaise = true); //return a -1 for fold, else number for bet/chk. this calls other action fxns
 		string getName();
 		void setType(int myType); //for now, 0 just does check/Fold and 1 does input your bet
+		void updateStrategy(string strat); //also sets type
+		
+		string getStrategy();
+
 		int getMoney();  //return money amt
 		void takeMoney(int amt);
 /*
@@ -31,10 +40,18 @@ public:
 protected:
 	
 	int money;
-	bool automated;
-	int strategy;
+	bool automated; //not sure how used, sort of a strategy thing.
+	//int strategy;
+	string strategy; // struct_strat_ZZ_P#_param1_param2
+	vector<string> strat_params;
+	string struct_strat;
+
 	string name;
-	int type;  //1 is active, uses I/O. 0 always calls. >1 does diff stuff. handled by action()
+	int type;  /* a short for struct_strat
+			   1 is active, uses I/O. 
+			   0 always calls. 
+			   >1 does diff stuff. handled by action()
+		*/
 	bool initialized;  //strategy dependent
 
 	/* Data structures that will help to process one deal/round */
@@ -80,7 +97,7 @@ protected:
 	int human_action(int s, Felt f); //called if it's a human. does all human interaction
 
 	//one version AI. the random adds randomness if the player requests it
-	int comp_action1(int seat, Felt f, bool prand=false);
+	int mr_probability_act(int seat, Felt f, bool prand=false);
 	/* spontaneity: some measure of how chancy your hand is.  
 	given the same prob_win,
 	a hand with high spontaneity is good for calling, lower for raising 
@@ -94,3 +111,30 @@ protected:
 };
 
 #endif
+
+
+/*
+	Types >1
+
+	Rounds: pre-flop (pf), flop (f), turn (t), river (r)
+
+	2:	Name: mr_probability
+		Strategy:
+			Looks (1) strength of what we have now, (2) strength of what we might get
+			probabilistically looks at chance of winning given a random pocket hand
+			assuming everyone else stayed in
+			and raises/calls accordingly
+		Parameters: 18
+				use_rand, prob_rand, spont_rand, pf_rs, pf_initial_rs, pf_cl, (6)
+				f_rs, f_initial_rs, f_cl, f_spont (4)
+				t_rs, t_initial_rs, t_cl, t_spont (4)
+				r_rs, r_initial_rs, r_cl (3)
+			Restrictions:
+				rs > initial_rs > cl, rands are mean 0 uniform [-rand/2, rand/2] <0.6
+	3:	Name: sr_markov
+		Strategy:
+
+		Parameters:
+			
+
+*/

@@ -123,7 +123,19 @@ int Table::getBids(int starter, int round){
 			//this will return either a -1 for fold, 0 for chk/fold, or a call (which is a fold if < amt)
 			//this needs to be filtered later for appropriate bets
 			curr_act = the_players[i]->action(i, *t_felt);
-			
+
+			to_match = 0;
+			for(k=0; k<MAX_SEATS;k++){  //see if he's folded
+				if(curr_bets[k]>to_match&&k!=i)to_match = curr_bets[k];
+			}
+
+	//			cout<<"raises so far: "<<t_felt->raise_level(round)<<endl;
+
+			//check if we need to curtail bet
+			if(t_felt->raise_level(round) >= MAX_RAISES && curr_bets[i] + curr_act > to_match){ 
+				curr_act = to_match - curr_bets[i];
+			}
+
 			th_actions[i][round][j] = curr_act;
 			if(curr_act > 0){
 				curr_bets[i] += curr_act;
@@ -131,10 +143,8 @@ int Table::getBids(int starter, int round){
 			}
 			if(the_players[i]->getMoney()<0){cout<<"warning, neg money!!!!";}
 			t_felt->add_action(i,round,curr_act,j);
-			to_match = 0;
-			for(k=0; k<MAX_SEATS;k++){  //see if he's folded
-				if(curr_bets[k]>to_match&&k!=i)to_match = curr_bets[k];
-			}
+
+
 			if(curr_bets[i] <to_match && (the_players[i]->getMoney() > 0)){folded[i] = true;}
 			else if(curr_bets[i]>to_match){
 				starter2 = i;}//re-raise, reset the betting
@@ -256,7 +266,7 @@ void Table::play_round_th(){
 	for(i=0;i<MAX_SEATS;i++){
 		if(active[i]){ //give them a card. TODO: start left of dealer
 
-			if(USE_BLINDS){
+			if(USE_BLINDS){ //k is the bet amount
 				if(i==currSmlBlind){ //small blind
 					if(DEF_SML_BLIND > the_players[i]->getMoney()){
 						k=the_players[i]->getMoney();
@@ -265,7 +275,7 @@ void Table::play_round_th(){
 					curr_bets[i] = k;
 					the_players[i]->takeMoney(k);
 					pot += k;
-					t_felt->add_action(i,0,k,0);
+					t_felt->add_action(i,0,k,0, false);
 				}else if(i==currBigBlind){ //big blind
 					if(DEF_BIG_BLIND > the_players[i]->getMoney()){
 						k=the_players[i]->getMoney();
@@ -365,7 +375,7 @@ void Table::play_round_th(){
 
 	//6: evaluate winner, reassign everything
 	cout.precision(11);
-	if(!stats_on)t_felt->print_chart(0, 0, 0, true, player_cards);
+	if(!stats_on && HUMAN_IN)t_felt->print_chart(0, 0, 0, true, player_cards);
 
 	float win_hand, hand_val[MAX_SEATS];
 	int winners,smallest_stack,  to_allocate, winnings, total_pot, max_in;
@@ -385,7 +395,7 @@ void Table::play_round_th(){
 			}else if(hand_val[i]==win_hand){ //just for stats. actual has to be looped
 				winners++;
 			}
-			if(!stats_on)cout<<endl<<the_players[i]->getName()<<" had: "<<hand_val[i];
+			if(!stats_on && HUMAN_IN)cout<<endl<<the_players[i]->getName()<<" had: "<<hand_val[i];
 		}else{hand_val[i] = -1;}
 	}
 

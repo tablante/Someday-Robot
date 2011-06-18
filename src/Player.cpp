@@ -17,6 +17,7 @@ Player::Player(int endowment, string myname){
 	type = 0; //default type
 	get_external_data();
 	initialized=true;
+	strategy = string("who knows");
 }
 
 string Player::getName(){
@@ -35,6 +36,41 @@ void Player::setType(int mytype){
 	type = mytype;
 	initialized=false;
 }
+
+string Player::getStrategy(){
+	return strategy;
+}
+
+void Player::updateStrategy(string strat){
+	strategy=strat;
+	//b_str_at_ZZ_p3_abc_123_afg
+	int start_param, num_params, i,j;
+	start_param = strat.find("_ZZ_");
+	struct_strat = strat.substr(0,start_param);  //TOCHECK
+	if(start_param != -1){ //if it has parameters to read in (neq -1)
+
+		//cout<< start_param ;
+		//if(start_param < int(strat.size()))cout<<"params are: "<<strat.substr(start_param+4);
+		i = strat.find("_",start_param+5);
+		num_params = atoi(strat.substr(start_param+5, i ).c_str());
+		start_param = i+1;	//after num underscore?
+		string s;
+		for(i=0;i<num_params;i++){
+			j = strat.find("_",start_param);
+			s = strat.substr(start_param,j-start_param);
+			strat_params.push_back(s);
+			start_param = j+1;
+		}
+	}
+
+	//set up the type
+	if(struct_strat.compare("mr_probability")==0){
+		type=2;
+	}else{
+		cout<<"unknown strategy: "<<struct_strat<<endl;
+	}
+}
+
 
 void Player::give_cards(int card1, int card2){
 	if(card1<card2){
@@ -79,7 +115,7 @@ void Player::initialize_probs(int style){
 }
 
 /* 
-	Right now all we get is hand prior probabilities
+Right now all we get is hand prior probabilities
 */
 void Player::get_external_data(){
 	ifstream file;
@@ -112,16 +148,16 @@ void Player::get_external_data(){
 
 /*
 this iterates through all other cards
-   0: highcard. 0.13 = ace, 0.01 = 2
-	1: low pair.  if we have a pocket pair, this is zeroes
-	2: pair- same as 4 kind
-	3: two pair- 121050 means 2A2J, Js are mine. 121099 means As are mine, 121011 means i just have a K.
-	4: 3 of a kind- same as 4kind
-	5: straight- look at card contributing, else a 0
-	6: flush- look at card contributing, else a 0
-	7: full house- same as 2P, but trips staht
-	8: 4 of a kind- 1199 means 4 of a kind with one of those in hand. 1112 means 4 of a kind on table, ace is MY kicker
-	9: straight flush- look at card contributing. 11 means i would have a st flush with a pocket K
+0: highcard. 0.13 = ace, 0.01 = 2
+1: low pair.  if we have a pocket pair, this is zeroes
+2: pair- same as 4 kind
+3: two pair- 121050 means 2A2J, Js are mine. 121099 means As are mine, 121011 means i just have a K.
+4: 3 of a kind- same as 4kind
+5: straight- look at card contributing, else a 0
+6: flush- look at card contributing, else a 0
+7: full house- same as 2P, but trips staht
+8: 4 of a kind- 1199 means 4 of a kind with one of those in hand. 1112 means 4 of a kind on table, ace is MY kicker
+9: straight flush- look at card contributing. 11 means i would have a st flush with a pocket K
 */
 void Player::eval_th_o(int* my_cards, int numCards, double* probs_tie_win, double* probs_higher){
 	int i,j,k,x;
@@ -150,7 +186,7 @@ void Player::eval_th_o(int* my_cards, int numCards, double* probs_tie_win, doubl
 					if(theirProbs[k]==1){ //erase below
 						for(x=k-1;x>=0;x--){theirProbs[x]=0;}
 					}}
-				
+
 				//fix the pair rankings. mygh[2] > mygh[1]
 				if(theirGHs[1]>myGHs[2]&&theirProbs[1]>0){//they have 2 uppers
 					theirProbs[2]+=theirProbs[1];
@@ -177,24 +213,24 @@ void Player::eval_th_o(int* my_cards, int numCards, double* probs_tie_win, doubl
 
 //seat can be thought of as "where am i"
 //action should return a number that is how much they're putting in.  0 is check/fold, -1 is fold?
-int Player::action(int seat, Felt f){
+int Player::action(int seat, Felt f, bool canRaise){
 	/* debugging:*/
 	int act;
-		//need to decide:
+	//need to decide:
 	if(type==0){  //this type acts automatically
 		act = act_call(seat, f);
 	}else if(type==1){ //type = 1, uses io
 		act = human_action(seat, f);
 	}else if(type==2){
-		act = comp_action1(seat, f,true);
+		act = mr_probability_act(seat, f,true);
 	}
 
 	/* let's just pick up how much we need to raise */
-return act;
+	return act;
 }
 
 /*
-	This returns the call that needs to be made
+This returns the call that needs to be made
 */
 int Player::act_call(int seat, Felt f){
 	int act,i;
@@ -204,7 +240,7 @@ int Player::act_call(int seat, Felt f){
 	//DBG cout<<"comparing"<<endl;
 	for(i=0;i<MAX_SEATS;i++){
 		if(pot[i] - pot[seat] > act){act = pot[i] - pot[seat];}
-	//	cout<<i<<" bid"<<pot[i] - pot[seat]<<"  ";
+		//	cout<<i<<" bid"<<pot[i] - pot[seat]<<"  ";
 	}
 	return act;
 }
@@ -221,15 +257,15 @@ double Player::prob_win(){
 		}
 	}
 	prob_win=prob_lose=0;
-/*	for(i=0;i<10;i++){
-		if(i<high_achieve){ //have this beat
-			prob_win += probs_tie_win[i] + probs_lose[i];
-		}else if(i==high_achieve){
-			prob_win += probs_tie_win[i];
-			prob_lose += probs_lose[i];
-		}
+	/*	for(i=0;i<10;i++){
+	if(i<high_achieve){ //have this beat
+	prob_win += probs_tie_win[i] + probs_lose[i];
+	}else if(i==high_achieve){
+	prob_win += probs_tie_win[i];
+	prob_lose += probs_lose[i];
 	}
-*/
+	}
+	*/
 	for (i=9;i>=0 && (i==9 || myProbs[i+1]!=1); i--){ //iterate over myprobs
 		for(j=0;j<10;j++){//iterate over opponent probs
 			if(j<i){//i'd win
@@ -242,7 +278,7 @@ double Player::prob_win(){
 			}
 		}
 	}
-	
+
 	return prob_win/(prob_win+prob_lose);
 }
 
@@ -288,7 +324,7 @@ int Player::human_action(int seat, Felt f){
 		if(HELP_PLAYER){
 			output_my_future2(myProbs, myGHs, probs_tie_win, probs_lose);
 			cout<<endl<<"Probability of winning is: "<<prob_win()<<"  Spontaneity is:"<<spontaneity()<<endl;
-			cout<<"A robot would do: "<< comp_action1(seat,f)<<endl;
+			cout<<"A robot would do: "<< mr_probability_act(seat,f)<<endl;
 		}
 	}
 	if(FIXED_LIMIT){
@@ -311,22 +347,23 @@ int Player::human_action(int seat, Felt f){
 		}else if(char_act == 'r' || char_act == 'R' || char_act == '2'){
 			act = i+r;
 		}else if(char_act == 'f' || char_act == 'F' || char_act == '0'){
-				act=-1;
-			}else{cout<<"ERROR, invalid entry somehow";}
-		}else{
+			act=-1;
+		}else{cout<<"ERROR, invalid entry somehow";}
+	}else{
 
-			cout<<endl<<"Enter "<<name<<"'s move: ";
-			cin>>act;
-		}
-		return act;
+		cout<<endl<<"Enter "<<name<<"'s move: ";
+		cin>>act;
+	}
+	return act;
 }
 
 
-int Player::comp_action1(int seat, Felt f, bool prand){
+
+
+int Player::mr_probability_act(int seat, Felt f, bool prand){
 	int act, i,r,phase;
 	int num_opponents_orig;
 	int num_opponents_curr;
-	char char_act;
 	int* tablecards = f.cards();
 	double spont, prob, advant;
 	int* fplayers;
@@ -357,104 +394,112 @@ int Player::comp_action1(int seat, Felt f, bool prand){
 			r=DEF_BIG_BLIND;
 		}else{r=DEF_BIG_BLIND*2;}
 	}
+
 	if(phase==0){
 		int hole_index=0;
 		if( (cards[0]&3) == (cards[1]&3) ){ //low 2 bits same means same suit
 			//13*lower-(lower^2+lower)/2+higher
 			hole_index = 90+13*int(cards[0]/13) - (int(cards[0]/13)*(int(cards[0]/13)+3))/2 + int(cards[1]/13);
 		}else{  //unsuited
-				//90+13*lower-(lower^2+3*lower)/2+higher
+			//90+13*lower-(lower^2+3*lower)/2+higher
 			hole_index = 13*int(cards[0]/13) - (int(cards[0]/13)*(int(cards[0]/13)+1))/2 + int(cards[1]/13);
 		}
 		advant = pocket_vals[hole_index][num_opponents_orig-1][0] / double(num_opponents_orig+1.0);
 		if(prand){
 			advant+= double(rand()%50)/double(250);
 		}
-		spont=0; //TO FIX
+		spont=0; //TO FIX, 7,8 suited is better than a pair of 3s sometimes
 	}
+	/*
+	now calculate the action
+	*/
+
 	if(phase>0){  //post flop
 		eval_th_o(cards, phase+2, probs_tie_win, probs_lose);
 		eval_th_m(cards, phase+2, myProbs, myGHs);
 		prob=prob_win();
 		spont=spontaneity();
 		advant = pow(prob, num_opponents_orig);
-		if(prand){
-			spont+= double(rand()%100)/double(300);
-			advant+= double(rand()%50)/double(250);
+		if(strat_params[0].compare("T")==0){
+			float spont_rand = float(atof(strat_params[2].c_str()));
+			float prob_rand = float(atof(strat_params[1].c_str()));
+			spont+= uRand(spont_rand/-2.0, spont_rand/2.0);
+			advant+= uRand(prob_rand/-2.0, prob_rand/2.0);
 		}
 	}
 	if(FIXED_LIMIT){
 		i=act_call(seat,f);
 
 		if(phase==0){ //PRE FLOP
-			if(advant>0.6){ //want to raise regardless
+			if(advant> atof(strat_params[3].c_str()) ){ //want to raise regardless
 				if(f.raise_level(1)<3){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.5){//want to do initial raise
+			}else if(advant> atof(strat_params[4].c_str()) ){//want to do initial raise
 				if(f.raise_level(1)<2){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.3){ //willing to call
+			}else if(advant> atof(strat_params[5].c_str()) ){ //willing to call
 				act=i;
 			}else{
 				act=0;    //check fold
 			}
 		}else if(phase==3){
-			if(advant>0.6){ //want to raise regardless
-				if(f.raise_level(1)<3){
+			if(advant>atof(strat_params[6].c_str())){ //want to raise regardless
+				if(f.raise_level(1)<=4){ 
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.5){//want to do initial raise
+			}else if(advant>atof(strat_params[7].c_str())){//want to do initial raise
 				if(f.raise_level(1)<2){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.3 && spont > 0.3){ //willing to call
-				act=i;
+			}else if(advant>atof(strat_params[8].c_str()) &&
+				spont > atof(strat_params[9].c_str())){ //willing to call
+					act=i;
 			}else{
 				act=0;    //check fold
 			}
 		}else if(phase==4){
-			if(advant>0.6){ //want to raise regardless
+			if(advant>atof(strat_params[10].c_str())){ //want to raise regardless
 				if(f.raise_level(2)<3){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.5){//want to do initial raise
+			}else if(advant>atof(strat_params[11].c_str())){//want to do initial raise
 				if(f.raise_level(2)<2){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.25 && spont > 0.2){ //willing to call
+			}else if(advant>atof(strat_params[12].c_str()) && spont > atof(strat_params[13].c_str())){ //willing to call
 				act=i;
 			}else{
 				act=0;  //check fold
 			}
 
 		}else if(phase==5){
-			if(advant>0.7){ //want to raise regardless
+			if(advant>atof(strat_params[14].c_str())){ //want to raise regardless
 				if(f.raise_level(3)<3){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.5){//want to do initial raise
+			}else if(advant>atof(strat_params[15].c_str())){//want to do initial raise
 				if(f.raise_level(3)<2){
 					act=i+r;
 				}else{
 					act=i;
 				}
-			}else if(advant>0.3){ //willing to call
+			}else if(advant>atof(strat_params[16].c_str())){ //willing to call
 				act=i;
 			}else{ //check fold
 				act=0;

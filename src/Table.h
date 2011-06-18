@@ -8,6 +8,7 @@
 #include "Deck.h"
 #include "Config.h"
 #include "Felt.h"
+#include "Evaluators.h"
 #include <fstream>
 
 using namespace std;
@@ -48,6 +49,10 @@ public:
 	13-25 Clubs
 	26-38 Diamonds
 	39-51 Hearts
+
+	Max raises:
+
+
 */
 private:
 	

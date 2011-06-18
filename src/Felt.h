@@ -33,7 +33,7 @@ public:
 		void add_player(int place, string name, int chips);
 		void remove_player(int place);
 		// , -1 fold | 0 check | 1 raise, then the amount
-		void add_action(int player_num, int round, int amount, int raise_lvl);
+		void add_action(int player_num, int round, int amount, int raise_lvl, bool count_raise=true);
 		void set_first_bet_seat(int round, int seat);
 		void fold_player(int seat); //for convenience, so felt doesn't calculate.
 		void setChips(int seat, int amt);
@@ -51,9 +51,15 @@ private:
 		int pot[MAX_SEATS];
 		int dealer;
 		int actions[MAX_SEATS][TH_ROUNDS][MAX_RAISES]; //number is amount put into pot that turn, -1 if folded, -2 if unreached
-			//SHOULD THIS BE MAX_RAISES+1 ???????
+			//SHOULD THIS BE MAX_RAISES+1 ??????? probably not unless max_raises is really low?
 
-		int action_depth[TH_ROUNDS]; //how much action for each round. this is one-indexed
+		//how much action for each round. this is one-indexed
+		//different from the number of raises
+		int action_depth[TH_ROUNDS]; 
+
+		int num_raises[TH_ROUNDS];
+		//increments when pot[i] increases above everyone elses
+
 		//just keeps track of who's got how much
 		int chip_counts[MAX_SEATS];
 		string player_names[MAX_SEATS];
